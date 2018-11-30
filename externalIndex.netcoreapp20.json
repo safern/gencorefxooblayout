@@ -1,0 +1,9 @@
+{
+  "Packages": {
+    "System.ServiceModel.Primitives": "4.4.1",
+    "System.ServiceModel.Duplex": "4.4.1",
+    "System.ServiceModel.Http": "4.4.1",
+    "System.ServiceModel.NetTcp": "4.4.1",
+    "System.ServiceModel.Security": "4.4.1"
+  }
+}
