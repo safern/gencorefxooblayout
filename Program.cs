@@ -39,7 +39,10 @@ namespace GenCorefxOobLayout
         public string DotnetCli { get; set; }
 
         [OptionalArgument("https://dotnetfeed.blob.core.windows.net/dotnet-core/index.json;https://api.nuget.org/v3/index.json", "restoreSources", "NuGet restore sources separated by ;")]
-        public string RestoreSources { get; set; }     
+        public string RestoreSources { get; set; }
+
+        [OptionalArgument(false, "justExternal", "Restore just external index")]
+        public bool JustExternal { get; set; }
     }
 
     class Program
@@ -66,6 +69,7 @@ namespace GenCorefxOobLayout
         private string _runtimeVersion;
         private string _netcoreappRefFolder;
         private string _externalIndex;
+        private bool _justExternal;
         public AssemblyDropGenerator(CommandLineOptions options)
         {
             _corefxDirectory = options.CorefxDirectory;
@@ -79,27 +83,31 @@ namespace GenCorefxOobLayout
             _runtimeVersion = options.RuntimeVersion;
             _netcoreappRefFolder = options.CorefxNetcoreappRef;
             _externalIndex = options.ExternalIndex;
+            _justExternal = options.JustExternal;
         }
 
         public void Generate()
         {
-            string[] files = Directory.GetFiles(Path.Join(_corefxDirectory, "src"), "*.pkgproj", SearchOption.AllDirectories);
-            Console.WriteLine("==== Copying OOB assemblies ====");
-            Console.WriteLine("");
-            foreach (var file in files)
+            if (!_justExternal)
             {
-                if (file.Contains("Native") || file.Contains("Private")) continue;
-
-                if (IsOOB(file))
+                string[] files = Directory.GetFiles(Path.Join(_corefxDirectory, "src"), "*.pkgproj", SearchOption.AllDirectories);
+                Console.WriteLine("==== Copying OOB assemblies ====");
+                Console.WriteLine("");
+                foreach (var file in files)
                 {
-                    string fileName = Path.GetFileNameWithoutExtension(file);
-                    fileName = fileName + ".dll";
-                    string sourceFile = Path.Combine(_corefxDirectory, _netcoreappRefFolder, fileName);
-                    string destName = Path.Combine(_outDir, fileName);
-                    if (File.Exists(sourceFile))
+                    if (file.Contains("Native") || file.Contains("Private")) continue;
+
+                    if (IsOOB(file))
                     {
-                        Console.WriteLine($"{sourceFile} -> {destName}");
-                        File.Copy(sourceFile, destName, overwrite: true);
+                        string fileName = Path.GetFileNameWithoutExtension(file);
+                        fileName = fileName + ".dll";
+                        string sourceFile = Path.Combine(_corefxDirectory, _netcoreappRefFolder, fileName);
+                        string destName = Path.Combine(_outDir, fileName);
+                        if (File.Exists(sourceFile))
+                        {
+                            Console.WriteLine($"{sourceFile} -> {destName}");
+                            File.Copy(sourceFile, destName, overwrite: true);
+                        }
                     }
                 }
             }
@@ -199,9 +207,13 @@ namespace GenCorefxOobLayout
             {
                 string fileName = reference.Name + ".dll";
                 string source = Path.Combine(publishDir, fileName);
-                string destination = Path.Combine(_outDir, fileName);
-                Console.WriteLine($"{source} -> {destination}");
-                File.Copy(source, destination, overwrite: true);
+                // We could use a meta package that doesn't contain binaries.
+                if (File.Exists(source))
+                {
+                    string destination = Path.Combine(_outDir, fileName);
+                    Console.WriteLine($"{source} -> {destination}");
+                    File.Copy(source, destination, overwrite: true);
+                }
             }
 
             // Copy transitive references that are not part of corefx.
