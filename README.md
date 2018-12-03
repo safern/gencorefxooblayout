@@ -22,4 +22,5 @@ Usage:
   - runtimeVersion : Runtime Framework Version (string, default=2.1)
   - dotnetcli      : Dotnet CLI Path (string, default=dotnet)
   - restoreSources : NuGet restore sources separated by ; (string, default=https://dotnetfeed.blob.core.windows.net/dotnet-core/index.json;https://api.nuget.org/v3/index.json)
+  - justExternal   : Restore just external index (true or false, default=False)
   ```
